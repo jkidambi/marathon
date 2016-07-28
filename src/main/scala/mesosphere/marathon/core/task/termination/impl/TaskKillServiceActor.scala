@@ -41,10 +41,19 @@ private[impl] class TaskKillServiceActor(
 
   val tasksToKill: mutable.HashMap[Task.Id, Option[Task]] = mutable.HashMap.empty
   val inFlight: mutable.HashMap[Task.Id, TaskToKill] = mutable.HashMap.empty
-  var retryTimer: Option[Cancellable] = None
+
+  val retryTimer: RetryTimer = new RetryTimer {
+    override def createTimer: () => Cancellable = { () =>
+      context.system.scheduler.schedule(config.killRetryTimeout, config.killRetryTimeout, self, Retry)
+    }
+  }
 
   override def preStart(): Unit = {
     context.system.eventStream.subscribe(self, classOf[MesosStatusUpdateEvent])
+  }
+
+  override def postStop(): Unit = {
+    retryTimer.cancel()
   }
 
   override def receive: Receive = {
@@ -93,7 +102,11 @@ private[impl] class TaskKillServiceActor(
       case (taskId, maybeTask) => processKill(taskId, maybeTask)
     }
 
-    retryTimer = Some(context.system.scheduler.scheduleOnce(config.killRetryTimeout, self, Retry))
+    if (inFlight.isEmpty) {
+      retryTimer.cancel()
+    } else {
+      retryTimer.setup()
+    }
   }
 
   def processKill(taskId: Task.Id, maybeTask: Option[Task]): Unit = {
@@ -135,12 +148,6 @@ private[impl] class TaskKillServiceActor(
 
       case _ => // ignore
     }
-
-    if (inFlight.nonEmpty) {
-      retryTimer = Some(context.system.scheduler.scheduleOnce(config.killRetryTimeout, self, Retry))
-    } else {
-      retryTimer = None
-    }
   }
 
   def isLost(task: Task): Boolean = {
@@ -167,4 +174,32 @@ private[termination] object TaskKillServiceActor {
     config: TaskKillConfig,
     clock: Clock): Props = Props(
     new TaskKillServiceActor(taskTracker, driverHolder, stateOpProcessor, config, clock))
+}
+
+/**
+  * Wraps a timer into an interface that hides internal mutable state behind simple setup and cancel methods
+  */
+private[this] trait RetryTimer {
+  private[this] var retryTimer: Option[Cancellable] = None
+
+  /** Creates a new timer when setup() is called */
+  def createTimer: () => Cancellable
+
+  /**
+    * Cancel the timer if there is one.
+    */
+  final def cancel(): Unit = {
+    retryTimer.foreach(_.cancel())
+    retryTimer = None
+  }
+
+  /**
+    * Setup a timer if there is no timer setup already. Will do nothing if there is a timer.
+    * Note that if the timer is scheduled only once, it will not be removed until you call cancel.
+    */
+  final def setup(): Unit = {
+    if (retryTimer.isEmpty) {
+      retryTimer = Some(createTimer())
+    }
+  }
 }
