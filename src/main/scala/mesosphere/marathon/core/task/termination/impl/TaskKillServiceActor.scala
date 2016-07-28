@@ -54,6 +54,11 @@ private[impl] class TaskKillServiceActor(
 
   override def postStop(): Unit = {
     retryTimer.cancel()
+    context.system.eventStream.unsubscribe(self)
+    if (tasksToKill.nonEmpty) {
+      log.warning("Stopping {}, but not all tasks have been killed. Remaining: {}, inFlight: {}",
+        self, tasksToKill.keySet.mkString(","), inFlight.keySet.mkString(","))
+    }
   }
 
   override def receive: Receive = {
