@@ -89,6 +89,10 @@ sealed trait Task {
       Some(agentInfo.host)
   }
 
+  /**
+    * convenience function added so that components can fold over this instead of matching
+    * the type of task. Every Task should eventually have a version, then this can be removed.
+    */
   def version: Option[Timestamp]
 }
 

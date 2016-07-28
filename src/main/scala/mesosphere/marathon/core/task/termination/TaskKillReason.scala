@@ -24,7 +24,7 @@ object TaskKillReason {
   /** The task is killed because the app no longer exists */
   case object Orphaned extends TaskKillReason
 
-  /** The task is killed because the app no longer exists */
+  /** The task is killed because it didn't turn running within a given time frame */
   case object Overdue extends TaskKillReason
 
   /** The task is killed because it is unknown */
