@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.concurrent.{ Future, Promise }
+import scala.concurrent.Promise
 
 class TaskKillServiceActorTest extends TestKit(ActorSystem("test"))
     with FunSuiteLike
@@ -56,47 +56,19 @@ class TaskKillServiceActorTest extends TestKit(ActorSystem("test"))
     promise.future.futureValue should be (Done)
   }
 
-  test("Kill single known task by ID") {
-    val f = new Fixture
-    val actor = f.createTaskKillActor()
-
-    Given("a single running task")
-    val task = f.mockTask(Task.Id.forRunSpec(f.appId), f.now(), mesos.Protos.TaskState.TASK_RUNNING)
-    f.taskTracker.task(task.taskId) returns Future.successful(Some(task))
-
-    When("the service is asked to kill that taskId")
-    val promise = Promise[Done]()
-    actor ! TaskKillServiceActor.KillTaskById(task.taskId, promise)
-
-    Then("it will fetch the task from the taskTracker")
-    verify(f.taskTracker, timeout(500)).task(eq(task.taskId))
-    noMoreInteractions(f.taskTracker)
-
-    And("a kill is issued to the driver")
-    verify(f.driver, timeout(500)).killTask(task.taskId.mesosTaskId)
-    noMoreInteractions(f.driver)
-
-    When("a terminal status update is published via the event stream")
-    f.publishStatusUpdate(task.taskId, mesos.Protos.TaskState.TASK_KILLED)
-
-    Then("the promise is eventually completed successfully")
-    promise.future.futureValue should be (Done)
-  }
-
-  test("Kill single unknown task by ID") {
+  test("Kill unknown task") {
+    // TODO
     val f = new Fixture
     val actor = f.createTaskKillActor()
 
     Given("an unknown taskId")
     val taskId = Task.Id.forRunSpec(PathId("/unknown"))
-    f.taskTracker.task(eq(taskId)) returns Future.successful(None)
 
     When("the service is asked to kill that taskId")
     val promise = Promise[Done]()
-    actor ! TaskKillServiceActor.KillTaskById(taskId, promise)
+    actor ! TaskKillServiceActor.KillUnknownTaskById(taskId, promise)
 
-    Then("it will fetch the task from the taskTracker")
-    verify(f.taskTracker, timeout(500)).task(eq(taskId))
+    Then("it will not fetch the task from the taskTracker")
     noMoreInteractions(f.taskTracker)
 
     And("a kill is issued to the driver")

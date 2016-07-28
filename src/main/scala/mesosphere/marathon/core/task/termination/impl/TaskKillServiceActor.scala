@@ -48,9 +48,6 @@ private[impl] class TaskKillServiceActor(
   }
 
   override def receive: Receive = {
-    case KillTaskById(taskId, promise) =>
-      killTaskById(taskId, promise)
-
     case KillUnknownTaskById(taskId, promise) =>
       killUnknownTaskById(taskId, promise)
 
@@ -65,15 +62,6 @@ private[impl] class TaskKillServiceActor(
 
     case unhandled: InternalRequest =>
       log.warning("Received unhandled {}", unhandled)
-  }
-
-  def killTaskById(taskId: Task.Id, promise: Promise[Done]): Unit = {
-    log.debug("Received KillTaskById({})", taskId)
-    import context.dispatcher
-    taskTracker.task(taskId).map {
-      case Some(task) => self ! KillTasks(Seq(task), promise)
-      case _ => self ! KillUnknownTaskById(taskId, promise)
-    }
   }
 
   def killUnknownTaskById(taskId: Task.Id, promise: Promise[Done]): Unit = {
@@ -165,7 +153,6 @@ private[termination] object TaskKillServiceActor {
 
   sealed trait Request extends InternalRequest
   case class KillTasks(tasks: Iterable[Task], promise: Promise[Done]) extends Request
-  case class KillTaskById(taskId: Task.Id, promise: Promise[Done]) extends Request
   case class KillUnknownTaskById(taskId: Task.Id, promise: Promise[Done]) extends Request
 
   sealed trait InternalRequest

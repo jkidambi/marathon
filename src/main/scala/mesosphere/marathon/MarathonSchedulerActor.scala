@@ -448,7 +448,7 @@ class SchedulerActions(
       tasks.foreach { task =>
         if (task.launchedMesosId.isDefined) {
           log.info("Killing {}", task.taskId)
-          killService.kill(task, TaskKillReason.DeletingApp)
+          killService.killTask(task, TaskKillReason.DeletingApp)
         }
       }
       tasks.flatMap(_.launchedMesosId).foreach { taskId =>
@@ -492,7 +492,7 @@ class SchedulerActions(
           )
           tasksByApp.appTasks(unknownAppId).foreach { orphanTask =>
             log.info(s"Killing ${orphanTask.taskId}")
-            killService.kill(orphanTask, TaskKillReason.Orphaned)
+            killService.killTask(orphanTask, TaskKillReason.Orphaned)
           }
         }
 

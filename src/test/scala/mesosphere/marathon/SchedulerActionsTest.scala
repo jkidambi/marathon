@@ -102,7 +102,7 @@ class SchedulerActionsTest
 
     f.scheduler.reconcileTasks(f.driver).futureValue(5.seconds)
 
-    verify(f.killService, times(1)).kill(orphanedTask, TaskKillReason.Orphaned)
+    verify(f.killService, times(1)).killTask(orphanedTask, TaskKillReason.Orphaned)
   }
 
   test("Scale up correctly in case of lost tasks (active queue)") {

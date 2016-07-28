@@ -85,7 +85,7 @@ class OverdueTasksActorTest extends MarathonSpec with GivenWhenThen with maratho
 
     Then("the task kill gets initiated")
     verify(taskTracker, Mockito.timeout(1000)).tasksByApp()(any[ExecutionContext])
-    verify(killService, Mockito.timeout(1000)).kill(mockTask, TaskKillReason.Overdue)
+    verify(killService, Mockito.timeout(1000)).killTask(mockTask, TaskKillReason.Overdue)
   }
 
   // sounds strange, but this is how it currently works: determineOverdueTasks will consider a missing startedAt to
@@ -148,9 +148,9 @@ class OverdueTasksActorTest extends MarathonSpec with GivenWhenThen with maratho
     verify(taskTracker).tasksByApp()(any[ExecutionContext])
 
     And("All somehow overdue tasks are killed")
-    verify(killService).kill(unconfirmedOverdueTask, TaskKillReason.Overdue)
-    verify(killService).kill(overdueUnstagedTask, TaskKillReason.Overdue)
-    verify(killService).kill(overdueStagedTask, TaskKillReason.Overdue)
+    verify(killService).killTask(unconfirmedOverdueTask, TaskKillReason.Overdue)
+    verify(killService).killTask(overdueUnstagedTask, TaskKillReason.Overdue)
+    verify(killService).killTask(overdueStagedTask, TaskKillReason.Overdue)
 
     And("but not more")
     verifyNoMoreInteractions(driver)

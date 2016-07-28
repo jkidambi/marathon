@@ -21,17 +21,6 @@ trait TaskKillService {
   def killTasks(tasks: Iterable[Task], reason: TaskKillReason): Future[Done]
 
   /**
-    * Kill a task by the given Id. The implementation should add the task onto a queue that is processed
-    * short term and will eventually kill the task.
-    *
-    * @param taskId the id of the task that shall be killed.
-    * @param reason the reason why the task shall be killed.
-    * @return a future that is completed when all tasks are killed.
-    */
-  // TODO: remove function and only allow killing unknown tasks or Tasks
-  def killTaskById(taskId: Task.Id, reason: TaskKillReason): Future[Done]
-
-  /**
     * Kill the given task. The implementation should add the task onto
     * a queue that is processed short term and will eventually kill the task.
     *
@@ -39,7 +28,7 @@ trait TaskKillService {
     * @param reason the reason why the task shall be killed.
     * @return a future that is completed when all tasks are killed.
     */
-  def kill(task: Task, reason: TaskKillReason): Future[Done]
+  def killTask(task: Task, reason: TaskKillReason): Future[Done]
 
   /**
     * Kill the given unknown task by ID and do not try to fetch its state

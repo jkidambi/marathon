@@ -64,7 +64,7 @@ class HealthCheckActorTest
     val actor = f.actor(HealthCheck(maxConsecutiveFailures = 3))
 
     actor.underlyingActor.checkConsecutiveFailures(f.task, Health(f.task.taskId, consecutiveFailures = 3))
-    verify(f.killService).kill(f.task, TaskKillReason.FailedHealthChecks)
+    verify(f.killService).killTask(f.task, TaskKillReason.FailedHealthChecks)
     verifyNoMoreInteractions(f.tracker, f.driver, f.scheduler)
   }
 
