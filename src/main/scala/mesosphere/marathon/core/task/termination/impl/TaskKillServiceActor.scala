@@ -43,7 +43,7 @@ private[impl] class TaskKillServiceActor(
   val inFlight: mutable.HashMap[Task.Id, TaskToKill] = mutable.HashMap.empty
 
   val retryTimer: RetryTimer = new RetryTimer {
-    override def createTimer: () => Cancellable = { () =>
+    override def createTimer: Cancellable = {
       context.system.scheduler.schedule(config.killRetryTimeout, config.killRetryTimeout, self, Retry)
     }
   }
@@ -56,7 +56,8 @@ private[impl] class TaskKillServiceActor(
     retryTimer.cancel()
     context.system.eventStream.unsubscribe(self)
     if (tasksToKill.nonEmpty) {
-      log.warning("Stopping {}, but not all tasks have been killed. Remaining: {}, inFlight: {}",
+      log.warning(
+        "Stopping {}, but not all tasks have been killed. Remaining: {}, inFlight: {}",
         self, tasksToKill.keySet.mkString(","), inFlight.keySet.mkString(","))
     }
   }
@@ -188,7 +189,7 @@ private[this] trait RetryTimer {
   private[this] var retryTimer: Option[Cancellable] = None
 
   /** Creates a new timer when setup() is called */
-  def createTimer: () => Cancellable
+  def createTimer: Cancellable
 
   /**
     * Cancel the timer if there is one.
@@ -204,7 +205,7 @@ private[this] trait RetryTimer {
     */
   final def setup(): Unit = {
     if (retryTimer.isEmpty) {
-      retryTimer = Some(createTimer())
+      retryTimer = Some(createTimer)
     }
   }
 }
